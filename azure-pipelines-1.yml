@@ -1,0 +1,39 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+schedules:
+- cron: "0 0 * * *"
+  branches:
+    include:
+    - master
+  displayName: Daily midnight build
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+steps:
+- checkout: self
+  persistCredentials: true
+  clean: true
+#- script: |
+#    cd generator
+#    npm install
+#    npm run generate-all
+#    cd ..
+#  displayName: 'Generate schemas'
+- script: |
+    cd generator
+    npm install
+    npm run generate-single portal/resource-manager
+    cd ..
+  displayName: 'Generate schemas'
+- script: |
+    git config user.name "Autogenerator Pipeline"
+    git checkout -b autogenerate
+    git add --all schemas
+    if ! git diff-index --quiet HEAD --; then
+      git commit -m "Autogenerate schemas"
+      git push --force origin autogenerate
+    fi
